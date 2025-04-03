@@ -100,27 +100,55 @@ mvn spring-boot:run
 
 ---
 
-##  **Run Using Docker**
-1.🛠 Build the Spring Boot Application
-**Before running with Docker, we need to build the JAR file**: mvn clean package 
+🚀 Run Using Docker
+🛠 1. Build the Spring Boot Application
+Before running with Docker, build the JAR file:
+mvn clean package
 This creates a .jar file inside the target/ directory.
-2.**If you have MySQL running locally, stop it to avoid conflicts**:sudo systemctl stop mysql  # For Linux/macOS  
-                                                                    net stop MySQL             # For Windows (Command Prompt)  
-3.**Start the containers**: docker-compose up -d
-   **rebuild the containers**:docker-compose up --build --force-recreate
 
-4.**Check if the containers are running**: docker ps
+🔄 2. Stop MySQL (If Running Locally)
+To avoid conflicts, stop any locally running MySQL instance:
 
-5.**Access the Application**:
-Spring Boot API: http://localhost:8080
+🖥 For Linux/macOS
 
-Swagger UI: http://localhost:8080/swagger-ui/index.html
+sudo systemctl stop mysql
+🖥 For Windows (Command Prompt)
 
-6.**View Logs of a Running Container**:docker logs -f springboot-app
-                                       docker logs -f mysql-db
-7.**Stop all running containers**: docker stop $(docker ps -q)
-8.**Remove a specific container**:docker rm <container_id>
-9.**Restart a specific container**:docker restart springboot-app
+net stop MySQL
+🏗 3. Start the Containers
+Run the following command to start the containers in detached mode (-d):
+
+docker-compose up -d
+docker-compose up --build -d
+If you need to rebuild the containers, use:
+
+docker-compose up --build --force-recreate
+📌 4. Check Running Containers
+To verify that the Spring Boot and MySQL containers are running:
+
+docker ps
+🌍 5. Access the Application
+Spring Boot API → http://localhost:8080
+
+Swagger UI → http://localhost:8080/swagger-ui/index.html
+
+📜 6. View Logs of Running Containers
+To monitor logs in real-time:
+
+docker logs -f springboot-app
+docker logs -f mysql-db
+
+🛑 7. Stop All Running Containers
+docker stop $(docker ps -q)
+
+❌ 8. Remove a Specific Container
+
+docker rm <container_id>
+Replace <container_id> with the actual Container ID from docker ps.
+
+🔄 9. Restart a Specific Container
+
+docker restart springboot-app
 
 
 
