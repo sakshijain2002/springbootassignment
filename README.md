@@ -26,6 +26,9 @@ providing **user authentication, CRUD operations, and pagination**.
 - Install Docker
 - Install MySQLServer 8.0
 - Setup Postman for API Testing
+- Install Git
+- Install Maven(if runs locally )
+
 
 
 ## ⚡ Features
@@ -71,9 +74,9 @@ After running the application, access **Swagger UI** at:
 ## 🛠 **Run Without Docker (Local Setup)**
 
 ### 📌 Clone the repository
-```sh
-git clone https://github.com/your-username/springboot-country-api.git
-cd springboot-country-api
+
+git clone https://github.com/sakshijain2002/springbootassignment
+cd springbootassignment
 ```
 
 ### 📌 Configure the Database (MySQL)
