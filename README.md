@@ -1,4 +1,4 @@
-# 🌍 Spring Boot Country API
+# 🌍 Spring Boot User Management and Country Management
 
 ## 🚀 Overview
 This is a **RESTful web application** built with **Spring Boot, MySQL, JWT Authentication, and Docker**.  
