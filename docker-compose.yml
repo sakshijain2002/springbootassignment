@@ -20,9 +20,9 @@ services:
     depends_on:
       - mysql
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/assignment_db?serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_URL: jdbc:mysql://assignment-db.c9wwygwmkxbw.ap-south-1.rds.amazonaws.com:3306/assignment_db?serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: Sakshi2022
     ports:
       - "8080:8080"
     networks:
