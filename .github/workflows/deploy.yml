@@ -27,7 +27,7 @@ jobs:
 
       - name: Deploy to EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} <<EOF
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} 
             # Ensure the springboot-assignment directory exists
             if [ ! -d "/home/ec2-user/springboot-assignment" ]; then
               git clone https://github.com/sakshijain2002/springbootassignment /home/ec2-user/springboot-assignment
