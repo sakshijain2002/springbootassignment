@@ -28,7 +28,11 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
-            cd /home/ec2-user/springboot-assignment  # Adjust to your project directory
+            # Ensure the springboot-assignment directory exists
+            if [ ! -d "/home/ec2-user/springboot-assignment" ]; then
+              git clone https://github.com/sakshijain2002/springbootassignment /home/ec2-user/springboot-assignment
+            fi
+            cd /home/ec2-user/springboot-assignment  # Navigate to the project directory
             git pull origin main  # Pull the latest code
             mvn clean package -DskipTests  # Run the Maven build on EC2
             docker-compose down  # Stop the running container if any
