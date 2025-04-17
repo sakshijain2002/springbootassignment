@@ -3,7 +3,7 @@ name: Deploy to EC2 and RDS
 on:
   push:
     branches:
-      - master # Trigger on push to the 'main' branch
+      - master  # Trigger on push to the 'main' branch
 
 jobs:
   build:
@@ -12,19 +12,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-
-      - name: Set up Java (JDK 17)
-        uses: actions/setup-java@v2
-        with:
-          java-version: '17'  # Ensure you're using the correct Java version
-
-      - name: Set up Maven
-        uses: s4u/setup-maven@v1  # Add step to set up Maven if needed
-        with:
-          maven-version: '3.8.1'  # Specify your desired Maven version (adjust as needed)
-
-      - name: Build with Maven
-        run: mvn clean package -DskipTests  # Use mvn clean package to ensure a clean build
 
       - name: Set up SSH key
         run: |
@@ -43,6 +30,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
             cd /home/ec2-user/springboot-assignment  # Adjust to your project directory
             git pull origin main  # Pull the latest code
+            mvn clean package -DskipTests  # Run the Maven build on EC2
             docker-compose down  # Stop the running container if any
             docker-compose up -d  # Rebuild and start the container
           
