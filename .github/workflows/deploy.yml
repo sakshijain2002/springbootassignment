@@ -18,6 +18,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+
       - name: SSH to EC2 and Build & Deploy
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -32,10 +35,7 @@ jobs:
             fi
             
             cd springboot-app
-            git pull origin master 
-            
-            
-            mvn  package -DskipTests
+            git pull origin master  # Pull the latest changes
 
             # Build the Docker image on EC2
             docker build -t springboot-app .
