@@ -1,17 +1,37 @@
 
 services:
+  mysql:
+    image: mysql:latest
+    container_name: mysql-container
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: assignment_db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - springboot-network
+
   backend:
     build: .
     container_name: springboot-app
     restart: always
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://assignment-db.c9wwygwmkxbw.ap-south-1.rds.amazonaws.com:3306/assignment_db?serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: admin
-      SPRING_DATASOURCE_PASSWORD: Sakshi2022
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-container:3306/assignment_db?serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
     ports:
       - "8080:8080"
+    depends_on:
+      - mysql
     networks:
       - springboot-network
+
+volumes:
+  mysql_data:
 
 networks:
   springboot-network:

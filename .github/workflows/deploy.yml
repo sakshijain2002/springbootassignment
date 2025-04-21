@@ -1,9 +1,9 @@
-name: Deploy to EC2 and RDS
+name: Deploy to EC2 and MySQL Container
 
 on:
   push:
     branches:
-      - master  # Trigger on push to the 'main' branch
+      - main  # Trigger on push to the 'main' branch
 
 jobs:
   build:
@@ -29,7 +29,8 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} <<EOF
             echo "Connected to EC2"
-
+          
+            # Clone repository if not already present
             if [ ! -d "springboot-assignment" ]; then
               git clone https://github.com/sakshijain2002/springbootassignment springboot-assignment
             fi
@@ -40,11 +41,14 @@ jobs:
             echo "Running Maven build..."
             mvn clean package -DskipTests
 
-            echo "Restarting Docker containers..."
+            echo "Starting MySQL container..."
+            docker rm -f mysql-container || true  # Remove any existing container
+            docker run --name mysql-container -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=assignment_db -e MYSQL_USER=root -e MYSQL_PASSWORD=root -p 3306:3306 -d mysql:latest
+
+            echo "Restarting Spring Boot Docker container..."
             docker rm -f springboot-app || true
             docker-compose down || true
             docker-compose up -d
+
+            echo "Deployment finished"
           EOF
-      
-            
-          
