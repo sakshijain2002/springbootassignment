@@ -18,6 +18,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+
       - name: SSH to EC2 and Build & Deploy
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -25,7 +28,6 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
           script: |
-            # Go to home and clone project if not exists
             cd ~
             if [ ! -d "springboot-app" ]; then
               git clone https://github.com/sakshijain2002/springbootassignment springboot-app
@@ -34,17 +36,18 @@ jobs:
             cd springboot-app
             git pull origin master
 
-            # Build Docker image
-            docker build -t springboot-app .
+            # Clean up old Docker container and image
+            sudo docker container rm load-container || true
+            sudo docker image rm load || true
 
-            # Stop and remove old container
-            docker stop springboot-app-container || true
-            docker rm springboot-app-container || true
+            # Build the Docker image
+            sudo docker build -t load .
 
-            # Run new container with environment variables
-            docker run -d -p 8080:8080 \
-              -e SPRING_DATASOURCE_URL=${{ secrets.RDS_URL }} \
-              -e SPRING_DATASOURCE_USERNAME=${{ secrets.RDS_USERNAME }} \
-              -e SPRING_DATASOURCE_PASSWORD=${{ secrets.RDS_PASSWORD }} \
-              -e APP_SECRET=${{ secrets.APP_SECRET }} \
-              --name springboot-app-container springboot-app
+            # Run Docker container with inline env vars
+            sudo docker run -d -p 8080:8080 \
+              --name load-container \
+              -e SPRING_DATASOURCE_URL="${{ secrets.RDS_URL }}" \
+              -e SPRING_DATASOURCE_USERNAME="${{ secrets.RDS_USERNAME }}" \
+              -e SPRING_DATASOURCE_PASSWORD="${{ secrets.RDS_PASSWORD }}" \
+              -e APP_SECRET="${{ secrets.APP_SECRET }}" \
+              load && echo "✅ Successfully deployed"
