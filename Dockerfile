@@ -2,16 +2,25 @@
 FROM maven:3.8.5-openjdk-17 AS build
 WORKDIR /app
 
-# Copy only essential files first to leverage Docker layer caching
+# Copy project files
+COPY pom.xml .
+COPY src ./src
 
+# Build the JAR file
+RUN mvn clean package -DskipTests
 
+# Stage 2: Run the application
+FROM openjdk:17-jdk-slim
+WORKDIR /app
+
+# Copy the jar from build stage
+COPY --from=build /app/target/*.jar app.jar
+
+# Set environment variables (optional if you're passing via docker run)
 ENV SPRING_DATASOURCE_URL=""
 ENV SPRING_DATASOURCE_USERNAME=""
 ENV SPRING_DATASOURCE_PASSWORD=""
+ENV APP_SECRET=""
 
-# Expose port 8080 for the application
-EXPOSE 8080
-
-# Run the application
+# Run the JAR
 CMD ["java", "-jar", "app.jar"]
-
