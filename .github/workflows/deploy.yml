@@ -38,7 +38,7 @@ jobs:
             git pull origin master
 
             echo "Running Maven build..."
-            mvn  package -DskipTests
+            mvn package -DskipTests
 
             echo "Restarting Docker containers..."
             docker rm -f springboot-app || true
