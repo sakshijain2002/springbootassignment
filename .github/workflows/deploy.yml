@@ -32,7 +32,7 @@ jobs:
             fi
             
             cd springboot-app
-            git pull origin master  # Pull the latest changes
+            git pull origin master 
 
             # Build the JAR file on EC2
             mvn clean package -DskipTests
