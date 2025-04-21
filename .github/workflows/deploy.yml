@@ -44,7 +44,7 @@ jobs:
             sudo docker image rm load || true
 
             # Build Docker image
-            sudo docker build -t load .
+            sudo docker build -t springboot-app.
 
             # Run Docker container with inline environment variables
             sudo docker run -d \
