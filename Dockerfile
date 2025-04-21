@@ -9,7 +9,7 @@ RUN mvn dependency:go-offline
 # Copy the source code
 COPY src ./src
 
-# Package the app (skipping tests for CI/CD)
+
 
 
 # Stage 2: Run the application using a lightweight JDK image
