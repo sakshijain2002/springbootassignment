@@ -10,7 +10,7 @@ RUN mvn dependency:go-offline
 COPY src ./src
 
 # Package the app (skipping tests for CI/CD)
-RUN mvn clean package -DskipTests
+
 
 # Stage 2: Run the application using a lightweight JDK image
 FROM openjdk:17-jdk-slim
