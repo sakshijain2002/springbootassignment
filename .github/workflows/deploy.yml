@@ -30,8 +30,9 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
-          source: "."
+          source: "target/*.jar Dockerfile deploy.yml"  # Only copy necessary files
           target: "/home/ec2-user/springboot-app"
+
 
       - name: Run Docker Container on EC2
         uses: appleboy/ssh-action@v1.0.0
@@ -40,7 +41,7 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Navigate to the directory where we copied the app
+            
             cd /home/ec2-user/springboot-app
 
             # Stop and remove any old containers if they exist
