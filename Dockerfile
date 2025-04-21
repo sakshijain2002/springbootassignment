@@ -1,13 +1,25 @@
-# Use an official OpenJDK runtime as a base image
-FROM openjdk:17-jdk-slim
-
-# Set the working directory in the container
+# Stage 1: Build the application
+FROM maven:3.8.5-openjdk-17 AS build
 WORKDIR /app
 
-# Copy the JAR file into the container
-COPY target/SpringBootAssginment-0.0.1-SNAPSHOT.jar app.jar
+# Copy only essential files first to leverage Docker layer caching
+COPY pom.xml .
+RUN mvn dependency:go-offline
 
-# Expose the application port
+# Copy the source code
+COPY src ./src
+
+# Package the app (skipping tests for CI/CD)
+RUN mvn clean package -DskipTests
+
+# Stage 2: Run the application using a lightweight JDK image
+FROM openjdk:17-jdk-slim
+WORKDIR /app
+
+# Copy the built JAR from the builder stage
+COPY --from=build /app/target/*.jar app.jar
+
+# Expose the port
 EXPOSE 8080
 
 # Run the application
