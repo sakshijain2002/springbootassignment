@@ -9,6 +9,9 @@ ENV SPRING_DATASOURCE_URL=""
 ENV SPRING_DATASOURCE_USERNAME=""
 ENV SPRING_DATASOURCE_PASSWORD=""
 
+# Expose port 8080 for the application
+EXPOSE 8080
+
 # Run the application
 CMD ["java", "-jar", "app.jar"]
 
