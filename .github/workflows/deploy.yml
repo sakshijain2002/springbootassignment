@@ -3,33 +3,54 @@ name: Deploy to EC2 and RDS
 on:
   push:
     branches:
-      - master  # Trigger on push to the 'main' branch
+      - master  # Trigger on push to the 'master' branch
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # Use an Ubuntu runner for this job
+    runs-on: ubuntu-latest
 
     steps:
+      # Checkout code
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      # Set up Java
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # Build with Maven
+      - name: Build JAR with Maven
+        run: mvn clean package -DskipTests
+
+      # Set up SSH key
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
           echo "$EC2_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
         env:
-          EC2_KEY: ${{ secrets.EC2_KEY }}  # Using the secret for the private key
+          EC2_KEY: ${{ secrets.EC2_KEY }}
 
+      # Add EC2 host to known_hosts
       - name: Set up SSH known hosts
         run: |
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy to EC2
+      # Copy JAR file to EC2
+      - name: Copy JAR to EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} <<EOF
+          scp -o StrictHostKeyChecking=no target/*.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/springboot-assignment/target/
+
+      # SSH into EC2 and deploy using Docker
+      - name: Deploy on EC2
+        run: |
+          ssh -o ServerAliveInterval=60 -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} <<EOF
             echo "Connected to EC2"
 
+            # Clone repo if it doesn't exist
             if [ ! -d "springboot-assignment" ]; then
               git clone https://github.com/sakshijain2002/springbootassignment springboot-assignment
             fi
@@ -37,14 +58,10 @@ jobs:
             cd springboot-assignment
             git pull origin master
 
-            echo "Running Maven build..."
-            mvn clean package -DskipTests
-
             echo "Restarting Docker containers..."
             docker rm -f springboot-app || true
             docker-compose down || true
             docker-compose up -d
+
+            echo "Deployment completed"
           EOF
-      
-            
-          
