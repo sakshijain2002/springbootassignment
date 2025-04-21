@@ -37,7 +37,7 @@ jobs:
             # Navigate to the home directory and clone the repo if not already present
             cd ~
             if [ ! -d "springboot-app" ]; then
-              git clone https://github.com/${{ github.repository }} springboot-app
+              git clone https://github.com/sakshijain2002/springbootassignment springboot-app
             fi
             
             cd springboot-app
