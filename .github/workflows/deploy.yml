@@ -36,22 +36,20 @@ jobs:
             cd springboot-app
             git pull origin master
 
-            # Kill any process using port 8080
-            sudo fuser -k 8080/tcp || true
+            # Clean up old Docker containers
+            sudo docker container prune -f  # Remove all stopped containers
 
-            # Remove old Docker container and image
-            sudo docker container rm load-container || true
-            sudo docker image rm load || true
+            # Clean up old Docker images
+            sudo docker image prune -a -f  # Remove all unused images
 
-            # Build Docker image
-            sudo docker build -t springboot-app.
+            # Build the Docker image
+            sudo docker build -t springboot-image .
 
-            # Run Docker container with inline environment variables
-            sudo docker run -d \
-              -p 8080:8080 \
-              --name load-container \
+            # Run Docker container with inline env vars
+            sudo docker run -d -p 8080:8080 \
+              --name springboot-container \
               -e SPRING_DATASOURCE_URL="${{ secrets.RDS_URL }}" \
               -e SPRING_DATASOURCE_USERNAME="${{ secrets.RDS_USERNAME }}" \
               -e SPRING_DATASOURCE_PASSWORD="${{ secrets.RDS_PASSWORD }}" \
               -e APP_SECRET="${{ secrets.APP_SECRET }}" \
-              load && echo "✅ Successfully deployed"
+              springboot-image && echo "✅ Successfully deployed"
