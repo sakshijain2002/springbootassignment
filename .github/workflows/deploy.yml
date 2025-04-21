@@ -3,7 +3,7 @@ name: Deploy to EC2 and MySQL Container
 on:
   push:
     branches:
-      - main  # Trigger on push to the 'main' branch
+      - master  # Trigger on push to the 'main' branch
 
 jobs:
   build:
@@ -36,7 +36,7 @@ jobs:
             fi
 
             cd springboot-assignment
-            git pull origin main
+            git pull origin master
 
             echo "Running Maven build..."
             mvn clean package -DskipTests
