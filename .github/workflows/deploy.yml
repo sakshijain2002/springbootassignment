@@ -33,9 +33,9 @@ jobs:
             
             cd springboot-app
             git pull origin master 
-
+            
             # Build the JAR file on EC2
-            mvn clean package -DskipTests
+            mvn  package -DskipTests
 
             # Build the Docker image on EC2
             docker build -t springboot-app .
