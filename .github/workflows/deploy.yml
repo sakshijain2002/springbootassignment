@@ -27,16 +27,26 @@ jobs:
       - name: Build Docker Image
         run: docker build -t springboot-app .
 
-
-
-
-      - name: Run Docker Compose on EC2
+      - name: SSH to EC2 and Clone Repo, Build & Deploy
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
           script: |
-            cd ~/springboot-app
+            # Navigate to the home directory and clone the repo if not already present
+            cd ~
+            if [ ! -d "springboot-app" ]; then
+              git clone https://github.com/${{ github.repository }} springboot-app
+            fi
+            
+            cd springboot-app
+            git pull origin master  # Pull the latest changes
+
+            # Build the JAR (or Docker image) on EC2
+            mvn clean package -DskipTests
+            docker build -t springboot-app .
+
+            # Run Docker Compose to deploy the application
             docker compose -f deploy.yml down || true
             docker compose -f deploy.yml up --build -d
