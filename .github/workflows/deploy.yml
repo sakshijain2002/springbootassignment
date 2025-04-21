@@ -10,22 +10,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout source code
+      # Step 1: Checkout the code
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Set up Java
+      # Step 2: Set up Java environment
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # Build with Maven (skip tests to save time)
+      # Step 3: Build the JAR file
       - name: Build JAR with Maven
         run: mvn clean package -DskipTests
 
-      # Set up SSH private key
+      # Step 4: Set up SSH private key
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
@@ -34,34 +34,30 @@ jobs:
         env:
           EC2_KEY: ${{ secrets.EC2_KEY }}
 
-      # Add EC2 host to known_hosts to prevent SSH prompt
+      # Step 5: Add EC2 to known_hosts
       - name: Set up SSH known hosts
         run: ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      # Copy the JAR file to EC2
-      - name: Copy JAR to EC2
+      # Step 6: Copy JAR and Docker files to EC2
+      - name: Copy JAR and Docker files to EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} "mkdir -p /home/ec2-user/springboot-assignment/target"
-          scp -o StrictHostKeyChecking=no target/*.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/springboot-assignment/target/
+          ssh ec2-user@${{ secrets.EC2_HOST }} "mkdir -p /home/ec2-user/springboot-assignment"
+          scp target/*.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/springboot-assignment/app.jar
+          scp Dockerfile docker-compose.yml ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/springboot-assignment/
 
-      # SSH into EC2 and deploy using Docker Compose
+      # Step 7: SSH into EC2 and restart Docker container
       - name: Deploy on EC2
         run: |
-          ssh -o ServerAliveInterval=60 -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} <<'EOF'
-            echo "Connected to EC2"
+          ssh -o ServerAliveInterval=60 ec2-user@${{ secrets.EC2_HOST }} <<'EOF'
+            echo "✅ Connected to EC2"
+            cd /home/ec2-user/springboot-assignment
 
-            # Clone repo if not already cloned
-            if [ ! -d "springboot-assignment" ]; then
-              git clone https://github.com/sakshijain2002/springbootassignment springboot-assignment
-            fi
-
-            cd springboot-assignment
-            git pull origin master
-
-            echo "Restarting Docker containers..."
+            echo "🧼 Cleaning up old Docker container..."
             docker rm -f springboot-app || true
             docker-compose down || true
-            docker-compose up -d
 
-            echo "✅ Deployment completed"
+            echo "🚀 Starting new container..."
+            docker-compose up --build -d
+
+            echo "✅ Deployment completed!"
           EOF
