@@ -14,7 +14,7 @@ FROM openjdk:17-jdk-slim
 WORKDIR /app
 
 # Copy the jar from build stage
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/target/SpringBootAssignment-0.0.1-SNAPSHOT.jar app.jar
 
 # Set environment variables (optional if you're passing via docker run)
 ENV SPRING_DATASOURCE_URL=""
