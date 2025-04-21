@@ -34,9 +34,7 @@ jobs:
         env:
           EC2_KEY: ${{ secrets.EC2_KEY }}
 
-      # Step 5: Add EC2 to known_hosts
-      - name: Set up SSH known hosts
-        run: ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
 
       # Step 6: Copy JAR and Docker files to EC2
       - name: Copy JAR and Docker files to EC2
