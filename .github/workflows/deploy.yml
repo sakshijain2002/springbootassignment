@@ -3,14 +3,14 @@ name: Deploy to EC2 and RDS
 on:
   push:
     branches:
-      - master  # Trigger on push to the 'master' branch
+      - master
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout code
+      # Checkout source code
       - name: Checkout repository
         uses: actions/checkout@v2
 
@@ -21,11 +21,11 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # Build with Maven
+      # Build with Maven (skip tests to save time)
       - name: Build JAR with Maven
         run: mvn clean package -DskipTests
 
-      # Set up SSH key
+      # Set up SSH private key
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
@@ -34,23 +34,23 @@ jobs:
         env:
           EC2_KEY: ${{ secrets.EC2_KEY }}
 
-      # Add EC2 host to known_hosts
+      # Add EC2 host to known_hosts to prevent SSH prompt
       - name: Set up SSH known hosts
-        run: |
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+        run: ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      # Copy JAR file to EC2
+      # Copy the JAR file to EC2
       - name: Copy JAR to EC2
         run: |
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} "mkdir -p /home/ec2-user/springboot-assignment/target"
           scp -o StrictHostKeyChecking=no target/*.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/springboot-assignment/target/
 
-      # SSH into EC2 and deploy using Docker
+      # SSH into EC2 and deploy using Docker Compose
       - name: Deploy on EC2
         run: |
-          ssh -o ServerAliveInterval=60 -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} <<EOF
+          ssh -o ServerAliveInterval=60 -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} <<'EOF'
             echo "Connected to EC2"
 
-            # Clone repo if it doesn't exist
+            # Clone repo if not already cloned
             if [ ! -d "springboot-assignment" ]; then
               git clone https://github.com/sakshijain2002/springbootassignment springboot-assignment
             fi
@@ -63,5 +63,5 @@ jobs:
             docker-compose down || true
             docker-compose up -d
 
-            echo "Deployment completed"
+            echo "✅ Deployment completed"
           EOF
