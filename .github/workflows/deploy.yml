@@ -3,7 +3,7 @@ name: Build and Deploy Spring Boot App to EC2
 on:
   push:
     branches:
-      - master  # Trigger the workflow on push to the dev branch
+      - master  # Trigger the workflow on push to the master branch
   workflow_dispatch:  # Allows manual trigger via GitHub UI
 
 jobs:
@@ -20,12 +20,13 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '17'
+          distribution: 'adoptopenjdk'
 
       # Step 3: Build the project with Maven
       - name: Build with Maven
         run: ./mvnw clean install -DskipTests
 
-      # Step 4: Tag Docker image with commit SHA and build
+      # Step 4: Build Docker image tagged with commit SHA
       - name: Build Docker image
         run: |
           docker build -t springboot-app:${{ github.sha }} .
@@ -52,9 +53,9 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             set -e
             docker load < springboot-app.tar
-            docker stop springboot-app || true
-            docker rm springboot-app || true
-            docker run -d -p 8080:8080 --name springboot-app springboot-app:${{ github.sha }}
+            docker stop springboot-app-${{ github.sha }} || true
+            docker rm springboot-app-${{ github.sha }} || true
+            docker run -d -p 8080:8080 --name springboot-app-${{ github.sha }} springboot-app:${{ github.sha }}
             docker ps
           EOF
 
