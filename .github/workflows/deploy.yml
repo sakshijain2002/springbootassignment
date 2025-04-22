@@ -22,36 +22,45 @@ jobs:
           java-version: '17'
           distribution: 'corretto'  # Use Amazon Corretto as the JDK distribution
 
-      # Step 3: Ensure mvnw is executable
+      # Step 3: Cache Maven dependencies
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      # Step 4: Ensure mvnw is executable
       - name: Make mvnw executable
         run: chmod +x ./mvnw
 
-      # Step 4: Build the project with Maven
+      # Step 5: Build the project with Maven
       - name: Build with Maven
-        run: ./mvnw clean install -DskipTests
+        run: ./mvnw clean install -DskipTests   # Use all cores for parallel builds
 
-      # Step 5: Tag Docker image with commit SHA and build
+      # Step 6: Build Docker image and tag it with commit SHA
       - name: Build Docker image
         run: |
           docker build -t springboot-app:${{ github.sha }} .
 
-      # Step 6: Save Docker image as tar
+      # Step 7: Save Docker image as tar file
       - name: Save Docker image as tar
         run: |
           docker save springboot-app:${{ github.sha }} -o springboot-app.tar
 
-      # Step 7: Write EC2 SSH key to file
+      # Step 8: Write EC2 SSH key to file
       - name: Write EC2 SSH key
         run: |
           echo "${{ secrets.EC2_KEY }}" > key.pem
           chmod 600 key.pem
 
-      # Step 8: Copy Docker image to EC2
+      # Step 9: Copy Docker image to EC2
       - name: Copy image to EC2
         run: |
           scp -o StrictHostKeyChecking=no -i key.pem springboot-app.tar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/
 
-      # Step 9: SSH into EC2 and deploy Docker container
+      # Step 10: SSH into EC2 and deploy Docker container
       - name: SSH into EC2 and deploy
         run: |
           ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
@@ -63,6 +72,6 @@ jobs:
             docker ps
           EOF
 
-      # Step 10: Clean up key file
+      # Step 11: Clean up key file
       - name: Clean up
         run: rm -f key.pem
