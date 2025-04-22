@@ -1,8 +1,10 @@
-name: Deploy Spring Boot App to EC2 with Docker
+name: Deploy Spring Boot App to EC2 with Docker Compose
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master  # Trigger the workflow on push to the master branch
+  workflow_dispatch:  # Allows manual trigger via GitHub UI
 
 jobs:
   deploy:
@@ -35,7 +37,7 @@ jobs:
           script: |
             # Step 1: Navigate to the app directory
             cd ~
-            
+
             # Step 2: Pull the latest changes from the repository
             if [ ! -d "springboot-app" ]; then
               git clone https://github.com/sakshijain2002/springbootassignment springboot-app
@@ -47,21 +49,21 @@ jobs:
             sudo fuser -k 8080/tcp || true
 
             # Step 4: Remove old Docker container and image (if any)
-            sudo docker container rm load-container || true
+            sudo docker container rm springboot-app || true
             sudo docker image rm load || true
 
             # Step 5: Build the new Docker image
-            sudo docker build -t load .
+            sudo docker build -t springboot-app .
 
             # Step 6: Run the new Docker container with environment variables
             sudo docker run -d \
               -p 8080:8080 \
-              --name load-container \
+              --name springboot-app \
               -e SPRING_DATASOURCE_URL="${{ secrets.RDS_URL }}" \
               -e SPRING_DATASOURCE_USERNAME="${{ secrets.RDS_USERNAME }}" \
               -e SPRING_DATASOURCE_PASSWORD="${{ secrets.RDS_PASSWORD }}" \
               -e APP_SECRET="${{ secrets.APP_SECRET }}" \
-              load && echo "✅ Successfully deployed"
+              springboot-app && echo "✅ Successfully deployed"
             
             # Step 7: Clean up old containers and images to free space (Optional)
             sudo docker system prune -f
