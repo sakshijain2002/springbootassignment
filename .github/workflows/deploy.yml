@@ -35,9 +35,10 @@ jobs:
       - name: Make mvnw executable
         run: chmod +x ./mvnw
 
-      # Step 5: Build the project with Maven
+      # Step 5: Build the project with Maven (Use parallel builds and skip tests)
       - name: Build with Maven
-        run: ./mvnw clean install -DskipTests   # Use all cores for parallel builds
+        run: |
+          ./mvnw clean install -DskipTests -T 1C  # Use all cores for parallel builds, improve speed
 
       # Step 6: Build Docker image and tag it with commit SHA
       - name: Build Docker image
@@ -50,13 +51,13 @@ jobs:
           docker save springboot-app:${{ github.sha }} -o springboot-app.tar
 
       # Step 8: Write EC2 SSH key to file
-      - name: Write EC2 SSH key
+      - name: Write EC2 SSH key to file
         run: |
           echo "${{ secrets.EC2_KEY }}" > key.pem
           chmod 600 key.pem
 
-      # Step 9: Copy Docker image to EC2
-      - name: Copy image to EC2
+      # Step 9: Copy Docker image to EC2 (Use faster copy method)
+      - name: Copy Docker image to EC2
         run: |
           scp -o StrictHostKeyChecking=no -i key.pem springboot-app.tar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/
 
@@ -75,3 +76,4 @@ jobs:
       # Step 11: Clean up key file
       - name: Clean up
         run: rm -f key.pem
+
