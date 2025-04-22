@@ -1,4 +1,4 @@
-name: Build and Deploy Spring Boot App to EC2
+name: Build and Deploy Spring Boot App to EC2 using Docker
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: [self-hosted]
+    runs-on: ubuntu-latest
 
     steps:
       # Step 1: Checkout the repository code
@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '17'
-          distribution: 'corretto'  # Use Amazon Corretto as the JDK distribution
+          distribution: 'corretto'
 
       # Step 3: Cache Maven dependencies
       - name: Cache Maven dependencies
@@ -35,10 +35,9 @@ jobs:
       - name: Make mvnw executable
         run: chmod +x ./mvnw
 
-      # Step 5: Build the project with Maven (Use parallel builds and skip tests)
+      # Step 5: Build the project with Maven
       - name: Build with Maven
-        run: |
-          ./mvnw clean install -DskipTests -T 1C  # Use all cores for parallel builds
+        run: ./mvnw clean install -DskipTests
 
       # Step 6: Build Docker image and tag it with commit SHA
       - name: Build Docker image
@@ -50,30 +49,37 @@ jobs:
         run: |
           docker save springboot-app:${{ github.sha }} -o springboot-app.tar
 
-      # Step 8: Write EC2 SSH key to a temporary directory
-      - name: Write EC2 SSH key to file
+      # Step 8: Write EC2 SSH key to file
+      - name: Write EC2 SSH key
         run: |
-          mkdir -p ${{ runner.temp }}/ssh
-          echo "${{ secrets.EC2_KEY }}" > ${{ runner.temp }}/ssh/key.pem
-          chmod 600 ${{ runner.temp }}/ssh/key.pem
+          echo "${{ secrets.EC2_KEY }}" > key.pem
+          chmod 600 key.pem
 
-      # Step 9: Copy Docker image to EC2 (Using rsync instead of scp for speed)
+      # Step 9: Fix permissions and create directory for image
+      - name: Ensure correct permissions and directory on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+            mkdir -p /home/${{ secrets.EC2_USER }}/docker-images
+            sudo chown -R ${{ secrets.EC2_USER }}: /home/${{ secrets.EC2_USER }}/docker-images
+          EOF
+
+      # Step 10: Copy Docker image to EC2 using rsync
       - name: Copy Docker image to EC2
         run: |
-          rsync -avz -e "ssh -i ${{ runner.temp }}/ssh/key.pem -o StrictHostKeyChecking=no" springboot-app.tar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/
+          rsync -avz -e "ssh -i key.pem -o StrictHostKeyChecking=no" springboot-app.tar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/docker-images/
 
-      # Step 10: SSH into EC2 and deploy Docker container
+      # Step 11: SSH into EC2 and deploy Docker container
       - name: SSH into EC2 and deploy
         run: |
-          ssh -i ${{ runner.temp }}/ssh/key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             set -e
-            docker load < springboot-app.tar
+            docker load < /home/${{ secrets.EC2_USER }}/docker-images/springboot-app.tar
             docker stop springboot-app || true
             docker rm springboot-app || true
             docker run -d -p 8080:8080 --name springboot-app springboot-app:${{ github.sha }}
             docker ps
           EOF
 
-      # Step 11: Clean up key file
+      # Step 12: Clean up key file
       - name: Clean up
-        run: rm -rf ${{ runner.temp }}/ssh
+        run: rm -f key.pem
