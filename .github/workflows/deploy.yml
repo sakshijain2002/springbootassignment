@@ -15,50 +15,54 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up JDK 17
+      # Step 2: Set up Amazon Corretto JDK 17
       - name: Set up Amazon Corretto JDK 17
         uses: actions/setup-java@v3
         with:
-            java-version: '17'
-            distribution: 'corretto'  # Use Amazon Corretto as the JDK distribution
+          java-version: '17'
+          distribution: 'corretto'  # Use Amazon Corretto as the JDK distribution
 
-      # Step 3: Build the project with Maven
+      # Step 3: Ensure mvnw is executable
+      - name: Make mvnw executable
+        run: chmod +x ./mvnw
+
+      # Step 4: Build the project with Maven
       - name: Build with Maven
         run: ./mvnw clean install -DskipTests
 
-      # Step 4: Build Docker image tagged with commit SHA
+      # Step 5: Tag Docker image with commit SHA and build
       - name: Build Docker image
         run: |
           docker build -t springboot-app:${{ github.sha }} .
 
-      # Step 5: Save Docker image as tar
+      # Step 6: Save Docker image as tar
       - name: Save Docker image as tar
         run: |
           docker save springboot-app:${{ github.sha }} -o springboot-app.tar
 
-      # Step 6: Write EC2 SSH key to file
+      # Step 7: Write EC2 SSH key to file
       - name: Write EC2 SSH key
         run: |
           echo "${{ secrets.EC2_KEY }}" > key.pem
           chmod 600 key.pem
 
-      # Step 7: Copy Docker image to EC2
+      # Step 8: Copy Docker image to EC2
       - name: Copy image to EC2
         run: |
           scp -o StrictHostKeyChecking=no -i key.pem springboot-app.tar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/
 
-      # Step 8: SSH into EC2 and deploy Docker container
+      # Step 9: SSH into EC2 and deploy Docker container
       - name: SSH into EC2 and deploy
         run: |
           ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             set -e
             docker load < springboot-app.tar
-            docker stop springboot-app-${{ github.sha }} || true
-            docker rm springboot-app-${{ github.sha }} || true
-            docker run -d -p 8080:8080 --name springboot-app-${{ github.sha }} springboot-app:${{ github.sha }}
+            docker stop springboot-app || true
+            docker rm springboot-app || true
+            docker run -d -p 8080:8080 --name springboot-app springboot-app:${{ github.sha }}
             docker ps
           EOF
 
-      # Step 9: Clean up key file
+      # Step 10: Clean up key file
       - name: Clean up
         run: rm -f key.pem
