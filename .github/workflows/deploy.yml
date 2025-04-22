@@ -38,7 +38,7 @@ jobs:
       # Step 5: Build the project with Maven (Use parallel builds and skip tests)
       - name: Build with Maven
         run: |
-          ./mvnw clean install -DskipTests -T 1C  # Use all cores for parallel builds, improve speed
+          ./mvnw clean install -DskipTests -T 1C  # Use all cores for parallel builds
 
       # Step 6: Build Docker image and tag it with commit SHA
       - name: Build Docker image
@@ -50,21 +50,22 @@ jobs:
         run: |
           docker save springboot-app:${{ github.sha }} -o springboot-app.tar
 
-      # Step 8: Write EC2 SSH key to file
+      # Step 8: Write EC2 SSH key to a temporary directory
       - name: Write EC2 SSH key to file
         run: |
-          echo "${{ secrets.EC2_KEY }}" > key.pem
-          chmod 600 key.pem
+          mkdir -p ${{ runner.temp }}/ssh
+          echo "${{ secrets.EC2_KEY }}" > ${{ runner.temp }}/ssh/key.pem
+          chmod 600 ${{ runner.temp }}/ssh/key.pem
 
-      # Step 9: Copy Docker image to EC2 (Use faster copy method)
+      # Step 9: Copy Docker image to EC2 (Using rsync instead of scp for speed)
       - name: Copy Docker image to EC2
         run: |
-          scp -o StrictHostKeyChecking=no -i key.pem springboot-app.tar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/
+          rsync -avz -e "ssh -i ${{ runner.temp }}/ssh/key.pem -o StrictHostKeyChecking=no" springboot-app.tar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/
 
       # Step 10: SSH into EC2 and deploy Docker container
       - name: SSH into EC2 and deploy
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+          ssh -i ${{ runner.temp }}/ssh/key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             set -e
             docker load < springboot-app.tar
             docker stop springboot-app || true
@@ -75,5 +76,4 @@ jobs:
 
       # Step 11: Clean up key file
       - name: Clean up
-        run: rm -f key.pem
-
+        run: rm -rf ${{ runner.temp }}/ssh
