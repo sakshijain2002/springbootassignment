@@ -1,55 +1,63 @@
-name: Deploy Spring Boot App to EC2 with Docker
+name: Build and Deploy Spring Boot App to EC2
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master  # Trigger the workflow on push to the dev branch
+  workflow_dispatch:  # Allows manual trigger via GitHub UI
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: [self-hosted, EC2-Runner]
 
     steps:
-      - name: Checkout Code
+      # Step 1: Checkout the repository code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Java 17
+      # Step 2: Set up JDK 17
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           java-version: '17'
-          distribution: 'temurin'
 
+      # Step 3: Build the project with Maven
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
+        run: ./mvnw clean install -DskipTests
 
-      - name: SSH to EC2 and Build & Deploy
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            cd ~
-            if [ ! -d "springboot-app" ]; then
-              git clone https://github.com/sakshijain2002/springbootassignment springboot-app
-            fi
+      # Step 4: Tag Docker image with commit SHA and build
+      - name: Build Docker image
+        run: |
+          docker build -t springboot-app:${{ github.sha }} .
 
-            cd springboot-app
-            git pull origin master
+      # Step 5: Save Docker image as tar
+      - name: Save Docker image as tar
+        run: |
+          docker save springboot-app:${{ github.sha }} -o springboot-app.tar
 
-            # Clean up old Docker containers
-            sudo docker container prune -f  # Remove all stopped containers
+      # Step 6: Write EC2 SSH key to file
+      - name: Write EC2 SSH key
+        run: |
+          echo "${{ secrets.EC2_KEY }}" > key.pem
+          chmod 600 key.pem
 
-            # Clean up old Docker images
-            sudo docker image prune -a -f  # Remove all unused images
+      # Step 7: Copy Docker image to EC2
+      - name: Copy image to EC2
+        run: |
+          scp -o StrictHostKeyChecking=no -i key.pem springboot-app.tar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/
 
-            # Build the Docker image
-            sudo docker build -t springboot-image .
+      # Step 8: SSH into EC2 and deploy Docker container
+      - name: SSH into EC2 and deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+            set -e
+            docker load < springboot-app.tar
+            docker stop springboot-app || true
+            docker rm springboot-app || true
+            docker run -d -p 8080:8080 --name springboot-app springboot-app:${{ github.sha }}
+            docker ps
+          EOF
 
-            # Run Docker container with inline env vars
-            sudo docker run -d -p 8080:8080 \
-              --name springboot-container \
-              -e SPRING_DATASOURCE_URL="${{ secrets.RDS_URL }}" \
-              -e SPRING_DATASOURCE_USERNAME="${{ secrets.RDS_USERNAME }}" \
-              -e SPRING_DATASOURCE_PASSWORD="${{ secrets.RDS_PASSWORD }}" \
-              -e APP_SECRET="${{ secrets.APP_SECRET }}" \
-              springboot-image && echo "✅ Successfully deployed"
+      # Step 9: Clean up key file
+      - name: Clean up
+        run: rm -f key.pem

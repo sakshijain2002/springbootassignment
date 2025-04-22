@@ -1,9 +1,21 @@
-FROM openjdk:17-jdk-slim
-
+FROM openjdk:17
 WORKDIR /app
+COPY . .
 
-ADD target/api-springboot-0.0.1-SNAPSHOT.jar /app/app.jar
+# Ensure mvnw is executable and run the build
+RUN chmod +x mvnw && ./mvnw clean install -DskipTests
 
+# Expose the application port
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the built JAR (assuming the JAR file will be in 'target' after build)
+CMD ["java", "-jar", "target/SpringBootAssignment-0.0.1-SNAPSHOT.jar"]
+
+
+
+
+
+
+
+
+
