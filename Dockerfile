@@ -10,6 +10,9 @@ COPY . .
 # Ensure the Maven wrapper script is executable and build the project
 RUN chmod +x mvnw && ./mvnw clean install -DskipTests
 
+# Check if the JAR file exists in the target directory
+RUN ls -l target/
+
 # Expose the port the app will run on
 EXPOSE 8080
 
