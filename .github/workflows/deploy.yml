@@ -1,21 +1,21 @@
-name: Deploy Spring Boot App to EC2 with Docker
+name: Deploy Spring Boot App on Self-Hosted Runner
 
 on:
   push:
     branches:
-      - master  # Trigger on push to master
-  workflow_dispatch:  # Manual trigger from GitHub UI
+      - master
+  workflow_dispatch:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # Run directly on your self-hosted runner (e.g., EC2)
 
     steps:
-      # Step 1: Checkout the code
+      # Step 1: Checkout Code
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Java 17 (Temurin)
+      # Step 2: Set up Java 17
       - name: Set up Java 17
         uses: actions/setup-java@v3
         with:
@@ -26,33 +26,27 @@ jobs:
       - name: Build with Maven
         run: mvn -B clean package --file pom.xml -T 1C
 
-      # Step 4: SSH to EC2 and deploy
-      - name: SSH to EC2 and deploy
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            cd ~
-            if [ ! -d "springboot-app" ]; then
-              git clone https://github.com/yourusername/yourrepo springboot-app
-            fi
-            cd springboot-app
-            git pull origin master
+      # Step 4: Stop and remove existing container
+      - name: Stop existing container
+        run: |
+          docker stop springboot-app || true
+          docker rm springboot-app || true
 
-            # Stop and remove old container
-            sudo docker stop springboot-app || true
-            sudo docker rm springboot-app || true
+      # Step 5: Remove old image
+      - name: Remove old Docker image
+        run: docker image rm springboot-app || true
 
-            # Remove old image
-            sudo docker image rm springboot-app || true
+      # Step 6: Build Docker image
+      - name: Build Docker image
+        run: docker build -t springboot-app .
 
-            # Build and run new Docker container
-            sudo docker build -t springboot-app .
-            sudo docker run -d -p 8080:8080 --name springboot-app springboot-app
+      # Step 7: Run Docker container
+      - name: Run Docker container
+        run: docker run -d -p 8080:8080 --name springboot-app springboot-app
 
-            # Optional: Clean up unused Docker resources
-            sudo docker system prune -f
+      # Step 8: (Optional) Prune Docker system
+      - name: Cleanup Docker
+        run: docker system prune -f
 
-            echo "✅ Deployment complete."
+      - name: Done
+        run: echo "✅ Deployment finished on self-hosted runner"
