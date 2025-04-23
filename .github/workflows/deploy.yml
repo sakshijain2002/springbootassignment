@@ -38,26 +38,32 @@ jobs:
       # Step 5: Stop and remove existing container (if running)
       - name: Stop existing container
         run: |
-          docker stop springboot-app || true
-          docker rm springboot-app || true
+          docker stop stationService || true
+          docker rm stationService || true
 
       # Step 6: Remove old Docker image (if any)
       - name: Remove old Docker image
-        run: docker image rm springboot-app || true
+        run: docker image rm stationService || true
 
       # Step 7: Build new Docker image
       - name: Build Docker image
-        run: docker build -t springboot-app .
+        run: docker build -t stationService .
 
-      # Step 8: Run Docker container
+      # ✅ Step 8: Run Docker container with environment variables
       - name: Run Docker container
-        run: docker run -d -p 8080:8080 --name springboot-app springboot-app
+        run: |
+          docker run -d -p 8080:8080 \
+            --name stationService \
+            -e RDS_URL=${{ secrets.RDS_URL }} \
+            -e RDS_USERNAME=${{ secrets.RDS_USERNAME }} \
+            -e RDS_PASSWORD=${{ secrets.RDS_PASSWORD }} \
+            stationService
 
       # Step 9: Show container logs (for debugging)
       - name: Show Docker logs
         run: |
           echo "📦 Container logs (last 100 lines):"
-          docker logs --tail 100 springboot-app
+          docker logs --tail 100 stationService
 
       # Step 10: Optional cleanup to save space
       - name: Cleanup Docker
