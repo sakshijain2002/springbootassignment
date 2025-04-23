@@ -50,14 +50,17 @@ jobs:
         run: docker build -t springboot-app .
 
       # Step 8: Run Docker container with secrets passed as environment variables
-      - name: Run Docker container with .env file
+      - name: Run Docker container
         run: |
-          docker run -d \
-            --name springboot-app \
-            --env-file .env \
-            -p 8080:8080 \
-            springboot-app
- 
+            docker run -d \
+              --name springboot-app \
+              -e RDS_URL=*** \
+              -e RDS_USERNAME=*** \
+              -e RDS_PASSWORD=*** \
+              -p 8080:8080 \
+              springboot-app
+      
+      
 
       # Step 9: Show container logs (for debugging)
       - name: Show Docker logs
