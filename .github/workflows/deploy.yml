@@ -15,16 +15,23 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Step 3: Set up Java 17
+      # Step 2: Set up Java 17
       - name: Set up Java 17
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # Step 4: Build the project with Maven (skip tests for speed)
+      # Step 3: Build the project with Maven (skip tests for speed)
       - name: Build with Maven
         run: mvn -B clean package -DskipTests -T 1C
+
+      # Step 4: Check if secrets are set correctly (safe check)
+      - name: Check secrets (safe check)
+        run: |
+          echo "RDS_URL length: ${#RDS_URL}"
+          echo "RDS_USERNAME length: ${#RDS_USERNAME}"
+          echo "RDS_PASSWORD length: ${#RDS_PASSWORD}"
 
       # Step 5: Stop and remove existing container (if running)
       - name: Stop existing container
