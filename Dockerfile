@@ -10,11 +10,11 @@ COPY . .
 # Ensure the Maven wrapper script is executable and build the project
 RUN chmod +x mvnw && ./mvnw clean install -DskipTests
 
-# Check if the JAR file exists in the target directory
+# Verify the JAR file location
 RUN ls -l target/
 
 # Expose the port the app will run on
 EXPOSE 8080
 
-# Specify the command to run the Spring Boot application using the JAR file
-CMD ["java", "-jar", "target/SpringBootAssignment-0.0.1-SNAPSHOT.jar"]
+# Specify the command to run the Spring Boot application using the correct JAR file location
+CMD ["java", "-jar", "/app/target/SpringBootAssginment-0.0.1-SNAPSHOT.jar"]
