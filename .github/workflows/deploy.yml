@@ -51,14 +51,14 @@ jobs:
 
       # Step 8: Run Docker container with secrets passed as environment variables
       - name: Run Docker container
-        run: |
-          docker run -d \
-            --name springboot-app \
-            -e RDS_URL=${{ secrets.RDS_URL }} \
-            -e RDS_USERNAME=${{ secrets.RDS_USERNAME }} \
-            -e RDS_PASSWORD=${{ secrets.RDS_PASSWORD }} \
-            -p 8080:8080 \
-            springboot-app
+        run: >
+          docker run -d
+          --name springboot-app
+          -e RDS_URL=${{ secrets.RDS_URL }}
+          -e RDS_USERNAME=${{ secrets.RDS_USERNAME }}
+          -e RDS_PASSWORD=${{ secrets.RDS_PASSWORD }}
+          -p 8080:8080
+          springboot-app
       
       
       
