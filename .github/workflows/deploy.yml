@@ -57,6 +57,12 @@ jobs:
       - name: Cleanup Docker
         run: docker system prune -f
 
+      # Step 10: Show container logs (for debugging)
+      - name: Show Docker logs
+        run: |
+          echo "📦 Container logs (last 100 lines):"
+          docker logs --tail 100 springboot-app
 
+      # Step 11: Final status
       - name: Done
         run: echo "✅ Deployment finished successfully on self-hosted runner"
