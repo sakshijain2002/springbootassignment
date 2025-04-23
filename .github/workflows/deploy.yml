@@ -61,12 +61,12 @@ jobs:
       # Step 9: Run Docker container with environment variables
       - name: Run Docker container
         run: |
-          docker run -d -p 8080:8080 \
-            --name springboot-app \
-            -e RDS_URL=${{ secrets.RDS_URL }} \
-            -e RDS_USERNAME=${{ secrets.RDS_USERNAME }} \
-            -e RDS_PASSWORD=${{ secrets.RDS_PASSWORD }} \
-            springboot-app
+            docker run -d -p 8080:8080 \
+              --name springboot-app \
+              -e RDS_URL=${{ secrets.RDS_URL }} \
+              -e RDS_USERNAME=${{ secrets.RDS_USERNAME }} \
+              -e RDS_PASSWORD=${{ secrets.RDS_PASSWORD }} \
+              springboot-app
 
       # Step 10: Show container logs (for debugging)
       - name: Show Docker logs
