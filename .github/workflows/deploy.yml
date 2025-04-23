@@ -49,37 +49,26 @@ jobs:
       - name: Build Docker image
         run: docker build -t springboot-app .
 
-      # Step 8: Check Docker Info
-      - name: Check Docker Info
-        run: docker info
-
-      # Step 9: List Docker Images (debugging step)
-      - name: List Docker Images
-        run: docker images
-
-      # Step 10: Run Docker container with secrets passed as environment variables
-      - name: Run Docker container
+      # Step 8: Run Docker container with secrets passed as environment variables
+      - name: Run Docker container with .env file
         run: |
           docker run -d \
             --name springboot-app \
-            -e RDS_URL=*** \
-            -e RDS_USERNAME=*** \
-            -e RDS_PASSWORD=*** \
+            --env-file .env \
             -p 8080:8080 \
             springboot-app
-          
-       
+ 
 
-      # Step 11: Show container logs (for debugging)
+      # Step 9: Show container logs (for debugging)
       - name: Show Docker logs
         run: |
           echo "📦 Container logs (last 100 lines):"
           docker logs --tail 100 springboot-app
 
-      # Step 12: Optional cleanup to save space
+      # Step 10: Optional cleanup to save space
       - name: Cleanup Docker images
         run: docker image prune -f
 
-      # Step 13: Final status
+      # Step 11: Final status
       - name: Done
         run: echo "✅ Deployment finished successfully on self-hosted runner"
