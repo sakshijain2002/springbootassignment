@@ -26,8 +26,8 @@ jobs:
       - name: Build with Maven
         run: mvn -B clean package -DskipTests -T 1C
 
-      # Step 4: Check if secrets are set correctly (safe check)
-      - name: Check secrets (safe check)
+      # Step 4: Debugging - Check secret values
+      - name: Debugging - Check secret values
         run: |
           echo "RDS_URL length: ${#RDS_URL}"
           echo "RDS_USERNAME length: ${#RDS_USERNAME}"
@@ -58,7 +58,7 @@ jobs:
             -p 8080:8080 \
             springboot-app
 
-      # Step 9: Show container logs (for debugging)
+      # Step 9: Show Docker container logs
       - name: Show Docker container logs
         run: |
           docker logs springboot-app
