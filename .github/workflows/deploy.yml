@@ -36,10 +36,15 @@ jobs:
         run: mvn -B clean package -DskipTests -T 1C
 
       # Step 5: Stop and remove existing container (if running)
-      - name: Stop existing container
+      - name: Stop and remove existing container (if running)
         run: |
-          docker stop springboot-app || true
-          docker rm springboot-app || true
+          if docker ps -a --format '{{.Names}}' | grep -q springboot-app; then
+            echo "Stopping and removing old container..."
+            docker stop springboot-app || true
+            docker rm springboot-app || true
+          else
+            echo "No existing container to stop/remove."
+          fi
 
       # Step 6: Remove old Docker image (if any)
       - name: Remove old Docker image
@@ -53,7 +58,7 @@ jobs:
       - name: Check Docker Info
         run: docker info
 
-      # ✅ Step 9: Run Docker container with environment variables
+      # Step 9: Run Docker container with environment variables
       - name: Run Docker container
         run: |
           docker run -d -p 8080:8080 \
