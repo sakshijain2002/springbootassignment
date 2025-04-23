@@ -36,15 +36,10 @@ jobs:
         run: mvn -B clean package -DskipTests -T 1C
 
       # Step 5: Stop and remove existing container (if running)
-      - name: Stop and remove existing container (if running)
+      - name: Stop existing container
         run: |
-          if docker ps -a --format '{{.Names}}' | grep -q springboot-app; then
-            echo "Stopping and removing old container..."
-            docker stop springboot-app || true
-            docker rm springboot-app || true
-          else
-            echo "No existing container to stop/remove."
-          fi
+          docker stop springboot-app || true
+          docker rm springboot-app || true
 
       # Step 6: Remove old Docker image (if any)
       - name: Remove old Docker image
@@ -54,11 +49,7 @@ jobs:
       - name: Build Docker image
         run: docker build -t springboot-app .
 
-      # Step 8: Verify Docker installation (debugging step)
-      - name: Check Docker Info
-        run: docker info
-
-      # ✅ Step 9: Run Docker container with environment variables
+      # Step 8: Run Docker container with secrets passed as environment variables
       - name: Run Docker container
         run: |
           docker run -d -p 8080:8080 \
@@ -68,16 +59,16 @@ jobs:
             -e RDS_PASSWORD=${{ secrets.RDS_PASSWORD }} \
             springboot-app
 
-      # Step 10: Show container logs (for debugging)
+      # Step 9: Show container logs (for debugging)
       - name: Show Docker logs
         run: |
           echo "📦 Container logs (last 100 lines):"
           docker logs --tail 100 springboot-app
 
-      # Step 11: Optional cleanup to save space
+      # Step 10: Optional cleanup to save space
       - name: Cleanup Docker
         run: docker system prune -f
 
-      # Step 12: Final status
+      # Step 11: Final status
       - name: Done
         run: echo "✅ Deployment finished successfully on self-hosted runner"
