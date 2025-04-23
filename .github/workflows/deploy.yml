@@ -57,6 +57,6 @@ jobs:
       - name: Cleanup Docker
         run: docker system prune -f
 
-      # Final confirmation
+
       - name: Done
         run: echo "✅ Deployment finished successfully on self-hosted runner"
